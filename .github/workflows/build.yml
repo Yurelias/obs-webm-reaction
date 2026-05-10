@@ -14,25 +14,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Clone OBS source headers
+      - name: Setup cmake
+        uses: lukka/get-cmake@latest
+
+      - name: Clone OBS source
         run: git clone --depth=1 --branch 31.0.3 https://github.com/obsproject/obs-studio.git C:\obs-src
         shell: cmd
 
-      - name: Download OBS deps (import lib)
+      - name: Configure OBS
         run: |
-          curl -L -o obs-deps.zip https://github.com/obsproject/obs-studio/releases/download/31.0.3/OBS-Studio-31.0.3-Windows.zip
-          7z x obs-deps.zip -oC:\obs-studio
+          cmake -B C:\obs-build -S C:\obs-src ^
+            -A x64 ^
+            -DENABLE_PLUGINS=OFF ^
+            -DENABLE_UI=OFF ^
+            -DENABLE_SCRIPTING=OFF ^
+            -DCMAKE_BUILD_TYPE=Release
         shell: cmd
 
-      - name: Configure CMake
+      - name: Build libobs only
+        run: cmake --build C:\obs-build --config Release --target libobs
+        shell: cmd
+
+      - name: Configure plugin
         run: |
           cmake -B build -S . ^
+            -A x64 ^
             -DLIBOBS_INCLUDE_DIR="C:/obs-src/libobs" ^
-            -DLIBOBS_LIB="C:/obs-studio/bin/64bit/obs.lib" ^
-            -A x64
+            -DLIBOBS_LIB="C:/obs-build/libobs/Release/obs.lib"
         shell: cmd
 
-      - name: Build
+      - name: Build plugin
         run: cmake --build build --config Release
         shell: cmd
 
