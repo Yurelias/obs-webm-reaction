@@ -3,7 +3,7 @@ name: Build OBS WebM Reaction Plugin
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # permet de lancer manuellement depuis l'interface GitHub
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -11,42 +11,32 @@ jobs:
     runs-on: windows-2022
 
     steps:
-      # 1. Récupère le code du repo
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Installe OBS Studio + headers via le package officiel
-      - name: Install OBS Studio (with dev headers)
-        run: |
-          $version = "31.0.3"
-          $url = "https://github.com/obsproject/obs-studio/releases/download/$version/OBS-Studio-$version-Windows.zip"
-          Invoke-WebRequest -Uri $url -OutFile obs.zip
-          Expand-Archive -Path obs.zip -DestinationPath C:\obs-studio
-        shell: powershell
-
-      # 3. Clone les headers libobs depuis les sources OBS (nécessaire pour compiler)
       - name: Clone OBS source headers
-        run: |
-          git clone --depth=1 --branch 31.0.3 https://github.com/obsproject/obs-studio.git C:\obs-src
+        run: git clone --depth=1 --branch 31.0.3 https://github.com/obsproject/obs-studio.git C:\obs-src
         shell: cmd
 
-      # 4. Configure avec CMake
+      - name: Download OBS deps (import lib)
+        run: |
+          curl -L -o obs-deps.zip https://github.com/obsproject/obs-studio/releases/download/31.0.3/OBS-Studio-31.0.3-Windows.zip
+          7z x obs-deps.zip -oC:\obs-studio
+        shell: cmd
+
       - name: Configure CMake
         run: |
           cmake -B build -S . ^
             -DLIBOBS_INCLUDE_DIR="C:/obs-src/libobs" ^
-            -DLIBOBS_LIB="C:/obs-studio/bin/64bit/obs.dll" ^
-            -DCMAKE_BUILD_TYPE=Release ^
+            -DLIBOBS_LIB="C:/obs-studio/bin/64bit/obs.lib" ^
             -A x64
         shell: cmd
 
-      # 5. Compile
       - name: Build
         run: cmake --build build --config Release
         shell: cmd
 
-      # 6. Prépare les fichiers à télécharger
-      - name: Prepare artifact folders
+      - name: Prepare artifact
         run: |
           mkdir output\obs-plugins\64bit
           mkdir output\data\obs-plugins\webm-reaction\locale
@@ -54,7 +44,6 @@ jobs:
           xcopy /E /I data output\data\obs-plugins\webm-reaction
         shell: cmd
 
-      # 7. Upload l'artifact (fichier téléchargeable depuis GitHub)
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
