@@ -12,13 +12,9 @@
 #include <media-io/audio-math.h>
 #include <math.h>
 
-#define blog(log_level, format, ...) \
-	blog(log_level, "[webm_reaction_source: '%s'] " format, \
-		obs_source_get_name(context->source), ##__VA_ARGS__)
-
-#define debug(format, ...) blog(LOG_DEBUG, format, ##__VA_ARGS__)
-#define info(format,  ...) blog(LOG_INFO,  format, ##__VA_ARGS__)
-#define warn(format,  ...) blog(LOG_WARNING, format, ##__VA_ARGS__)
+#define debug(format, ...) blog(LOG_DEBUG,   "[webm_reaction] " format, ##__VA_ARGS__)
+#define info(format,  ...) blog(LOG_INFO,    "[webm_reaction] " format, ##__VA_ARGS__)
+#define warn(format,  ...) blog(LOG_WARNING, "[webm_reaction] " format, ##__VA_ARGS__)
 
 /* ------------------------------------------------------------------ */
 
